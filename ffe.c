@@ -3,7 +3,7 @@
 #include "lauxlib.h"
 
 int hello(lua_State *L) {
-
+  lua_pushstring(L, "TEST");
   return 1;
 }
 

@@ -1,6 +1,6 @@
 #!/bin/bash -x
 
-INCLUDE="/c/Development/Lua5.1/include"
-LIBRARIES="/c/Development/Lua5.1/lib"
+INCLUDE="/cygdrive/c/Development/lua64/include"
+LIBRARIES="/cygdrive/c/Development/lua64"
 
-gcc -shared -o ffe.dll -I$INCLUDE ffe.c  $LIBRARIES/lua5.1.lib
+gcc -m64 -shared -o ffe.dll -I$INCLUDE ffe.c $LIBRARIES/liblua5.1.a
