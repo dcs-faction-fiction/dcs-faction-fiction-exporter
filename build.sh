@@ -1,8 +1,6 @@
-#!/bin/bash
+#!/bin/bash -x
 
-INCLUDE="/c/Development/lua/include"
-LIBRARIES="/c/Development/lua/lib"
+INCLUDE="/c/Development/Lua5.1/include"
+LIBRARIES="/c/Development/Lua5.1/lib"
 
-CMD="g++ -shared -o ffe.dll -I$INCLUDE $LIBRARIES/liblua.dll.a ffe.cpp "
-echo $CMD
-$CMD
+gcc -shared -o ffe.dll -I$INCLUDE ffe.c  $LIBRARIES/lua5.1.lib

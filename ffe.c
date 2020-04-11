@@ -1,4 +1,5 @@
 #include "lua.h"
+#include "lualib.h"
 #include "lauxlib.h"
 
 int hello(lua_State *L) {
