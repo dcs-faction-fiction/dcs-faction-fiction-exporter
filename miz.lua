@@ -1,7 +1,9 @@
 
 do
-
-
+  local host, port = "localhost", 5555
+  package.path = package.path.. ';.\\Scripts\\?.lua;.\\LuaSocket\\?.lua;'
+  local socket = require("socket")
+  local tcp = assert(socket.tcp())
 
 --[[function dump(o)
   if type(o) == 'table' then
@@ -17,23 +19,33 @@ do
 end]]--
 
 local airbaseDeltaAmmo = {}
-function printAirbaseDeltaAmmo()
+function buildAirbaseDeltaAmmo()
+  local s = ""
   for airbaseName,ammo in pairs(airbaseDeltaAmmo) do
     for ammoType,deltaAmount in pairs(ammo) do
       if deltaAmount ~= 0 then
         local airbase = Airbase.getByName(airbaseName)
         local airbaseId = airbase:getID()
-        env.info("----------     ["..airbaseName.."] "..ammoType.." = "..deltaAmount, false)
+        s = s..""..airbaseId..","..ammoType..","..deltaAmount.."\n"
       end
     end
+  end
+  return s
+end
+function sendAirbaseDeltaAmmo()
+  local s = buildAirbaseDeltaAmmo()
+  if s ~= '' then
+    env.info("---------- SENDING:\n"..s.."\n", false)
+    tcp:connect(host, port)
+    tcp:send(s)
+    tcp:close()
   end
 end
 
 local Event_Handler = {}
 function Event_Handler:onEvent(event)
   if event.id == world.event.S_EVENT_MISSION_END then
-    env.info("---------- AmmoWatch stopped, result:",false)
-    printAirbaseDeltaAmmo()
+    sendAirbaseDeltaAmmo()
   elseif event.id == world.event.S_EVENT_TAKEOFF or event.id == world.event.S_EVENT_LAND then
     local unit = event.initiator
     if unit and event.place then
