@@ -1,9 +1,5 @@
-
 do
-  local host, port = "localhost", 5555
-  package.path = package.path.. ';.\\Scripts\\?.lua;.\\LuaSocket\\?.lua;'
-  local socket = require("socket")
-  local tcp = assert(socket.tcp())
+
 
 function dump(o)
   if type(o) == 'table' then
@@ -17,6 +13,12 @@ function dump(o)
     return tostring(o)
   end
 end
+
+
+
+local host, port = "localhost", 5555
+package.path = package.path.. ';.\\Scripts\\?.lua;.\\LuaSocket\\?.lua;'
+local socket = require("socket")
 
 local airbaseDeltaAmmo = {}
 function buildAirbaseDeltaAmmo()
@@ -38,10 +40,12 @@ end
 function sendAirbaseDeltaAmmo()
   local s = buildAirbaseDeltaAmmo()
   if s ~= "" then
+    env.info("---------- CONNECTING: "..host..":"..port, false)
+    local c = assert(socket.connect(host, port))
     env.info("---------- SENDING:\n"..s, false)
-    tcp:connect(host, port)
-    tcp:send(s)
-    tcp:close()
+    c:send(s)
+    env.info("---------- CLOSING:", false)
+    c:close()
   end
 end
 function changeAirbaseDeltaAmmo(airbaseKey, typeKey, amount)

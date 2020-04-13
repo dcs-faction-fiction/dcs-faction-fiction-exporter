@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
@@ -26,56 +25,56 @@ func getEnv(key, fallback string) string {
 func getNextAction() string {
 	resp, err := http.Get(DCSFF_POLL_FOR_ACTIONS)
 	if err != nil {
-		log.Fatal(err)
+		return "{}"
 	}
-  defer resp.Body.Close()
+	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		return "{}"
 	}
-	return body
+	return string(body)
 }
 
 func sendWarehouse(json string) {
 	log.Println("Posting message: " + json)
-	req, err := http.NewRequest("POST", DCSFF_POST_WAREHOUSE, bytes.NewBuffer(json))
+	req, err := http.NewRequest("POST", DCSFF_POST_WAREHOUSE, bytes.NewBuffer([]byte(json)))
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 	defer resp.Body.Close()
 }
 
 func handleConnection(conn net.Conn) {
 
-	defer func() {
-		log.Println("Connection is being closed")
-		conn.Close()
-	}()
+	defer conn.Close()
 
 	reader := bufio.NewReader(conn)
 
+	apimessage := ""
 	for {
-		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 
 		// Read tokens delimited by newline
-		var apimessage = ""
 		s, err := reader.ReadString('\n')
 		if err != nil {
-			log.Fatal(err)
+			continue
 		}
 
 		s = strings.Trim(s, " ")
+		s = strings.Trim(s, "\n")
 		if s == "" {
-			var json := apimessage
-			apimessage := ""
-			log.Println("Posting message: " + json)
+			json := apimessage
+			apimessage = ""
 			sendWarehouse(json)
+			return
 		} else {
 			apimessage = apimessage + s
 		}
@@ -98,7 +97,8 @@ func listen() {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			continue
 		}
 		go handleConnection(conn)
 	}
@@ -110,9 +110,8 @@ func startPolling() {
 	go func() {
 		for {
 			select {
-			case t := <-ticker.C:
-				s := getNextAction();
-				log.Println("Got: " + s)
+			case <-ticker.C:
+				getNextAction()
 			}
 		}
 	}()
