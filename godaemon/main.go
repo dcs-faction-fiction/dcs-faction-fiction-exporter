@@ -12,8 +12,9 @@ import (
 	"time"
 )
 
-var DCSFF_POLL_FOR_ACTIONS = getEnv("DCSFF_POLL_FOR_ACTIONS", "http://localhost:8080/")
-var DCSFF_POST_WAREHOUSE = getEnv("DCSFF_POST_WAREHOUSE", "http://localhost:8080/")
+var DCSFF_POLL_FOR_ACTIONS = getEnv("DCSFF_POLL_FOR_ACTIONS", "http://localhost:8080/daemon-api/actions")
+var DCSFF_POST_WAREHOUSE = getEnv("DCSFF_POST_WAREHOUSE", "http://localhost:8080/daemon-api/warehouses")
+var DCSFF_APITOKEN = getEnv("DCSFF_APITOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZXMiOlsiZGFlbW9uIl19.9jKMYjh89WT190T8IUP0qUcL8N4mfox7EcoQurlAv0g")
 
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
@@ -43,6 +44,7 @@ func sendWarehouse(json string) {
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+DCSFF_APITOKEN)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -50,6 +52,13 @@ func sendWarehouse(json string) {
 		return
 	}
 	defer resp.Body.Close()
+
+	if resp.Status != "200" {
+		log.Println("response Status:", resp.Status)
+		log.Println("response Headers:", resp.Header)
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Println("response Body:", string(body))
+	}
 }
 
 func handleConnection(conn net.Conn) {

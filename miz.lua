@@ -26,12 +26,10 @@ function buildAirbaseDeltaAmmo()
   for airbaseName,ammo in pairs(airbaseDeltaAmmo) do
     for ammoType,deltaAmount in pairs(ammo) do
       if deltaAmount ~= 0 then
-        local airbase = Airbase.getByName(airbaseName)
-        local airbaseId = airbase:getID()
         if s ~= "" then
           s = s..","
         end
-        s = s.."{\"airbase\":"..airbaseId..",\"type\":\""..ammoType.."\",\"amount\":"..deltaAmount.."}\n"
+        s = s.."{\"airbase\":\""..airbaseName.."\",\"type\":\""..ammoType.."\",\"amount\":"..deltaAmount.."}\n"
       end
     end
   end
