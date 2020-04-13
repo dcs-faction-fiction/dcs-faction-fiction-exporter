@@ -2,20 +2,53 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
-var APPURL_POLL_FOR_ACTIONS = getEnv("APPURL_POLL_FOR_ACTIONS", "http://localhost:8080/")
+var DCSFF_POLL_FOR_ACTIONS = getEnv("DCSFF_POLL_FOR_ACTIONS", "http://localhost:8080/")
+var DCSFF_POST_WAREHOUSE = getEnv("DCSFF_POST_WAREHOUSE", "http://localhost:8080/")
 
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
 	}
 	return fallback
+}
+
+func getNextAction() string {
+	resp, err := http.Get(DCSFF_POLL_FOR_ACTIONS)
+	if err != nil {
+		log.Fatal(err)
+	}
+  defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return body
+}
+
+func sendWarehouse(json string) {
+	log.Println("Posting message: " + json)
+	req, err := http.NewRequest("POST", DCSFF_POST_WAREHOUSE, bytes.NewBuffer(json))
+	if err != nil {
+		log.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
 }
 
 func handleConnection(conn net.Conn) {
@@ -31,12 +64,21 @@ func handleConnection(conn net.Conn) {
 		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 
 		// Read tokens delimited by newline
+		var apimessage = ""
 		s, err := reader.ReadString('\n')
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		fmt.Printf("%s", s)
+		s = strings.Trim(s, " ")
+		if s == "" {
+			var json := apimessage
+			apimessage := ""
+			log.Println("Posting message: " + json)
+			sendWarehouse(json)
+		} else {
+			apimessage = apimessage + s
+		}
 	}
 }
 
@@ -69,8 +111,8 @@ func startPolling() {
 		for {
 			select {
 			case t := <-ticker.C:
-
-				log.Println("Tick at", t)
+				s := getNextAction();
+				log.Println("Got: " + s)
 			}
 		}
 	}()
