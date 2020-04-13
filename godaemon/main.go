@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+var DCSFF_SERVER_ID = getEnv("DCSFF_SERVER_ID", "server1")
+var DCSFF_LISTEN_PORT = getEnv("DCSFF_LISTEN_PORT", "5555")
 var DCSFF_POLL_FOR_ACTIONS = getEnv("DCSFF_POLL_FOR_ACTIONS", "http://localhost:8080/daemon-api/actions")
 var DCSFF_POST_WAREHOUSE = getEnv("DCSFF_POST_WAREHOUSE", "http://localhost:8080/daemon-api/warehouses")
 var DCSFF_APITOKEN = getEnv("DCSFF_APITOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZXMiOlsiZGFlbW9uIl19.9jKMYjh89WT190T8IUP0qUcL8N4mfox7EcoQurlAv0g")
@@ -24,7 +26,7 @@ func getEnv(key, fallback string) string {
 }
 
 func getNextAction() string {
-	resp, err := http.Get(DCSFF_POLL_FOR_ACTIONS)
+	resp, err := http.Get(DCSFF_POLL_FOR_ACTIONS + "/" + DCSFF_SERVER_ID)
 	if err != nil {
 		return "{}"
 	}
@@ -38,7 +40,7 @@ func getNextAction() string {
 
 func sendWarehouse(json string) {
 	log.Println("Posting message: " + json)
-	req, err := http.NewRequest("POST", DCSFF_POST_WAREHOUSE, bytes.NewBuffer([]byte(json)))
+	req, err := http.NewRequest("POST", DCSFF_POST_WAREHOUSE+"/"+DCSFF_SERVER_ID, bytes.NewBuffer([]byte(json)))
 	if err != nil {
 		log.Println(err)
 		return
@@ -53,7 +55,7 @@ func sendWarehouse(json string) {
 	}
 	defer resp.Body.Close()
 
-	if resp.Status != "200" {
+	if resp.Status != "200 OK" {
 		log.Println("response Status:", resp.Status)
 		log.Println("response Headers:", resp.Header)
 		body, _ := ioutil.ReadAll(resp.Body)
@@ -92,7 +94,7 @@ func handleConnection(conn net.Conn) {
 
 func listen() {
 
-	listener, err := net.Listen("tcp", ":5555")
+	listener, err := net.Listen("tcp", ":"+DCSFF_LISTEN_PORT)
 	if err != nil {
 		panic(err)
 	}
