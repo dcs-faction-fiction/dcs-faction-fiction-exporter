@@ -5,7 +5,7 @@ do
   local socket = require("socket")
   local tcp = assert(socket.tcp())
 
---[[function dump(o)
+function dump(o)
   if type(o) == 'table' then
     local s = '{'
     for k,v in pairs(o) do
@@ -16,7 +16,7 @@ do
   else
     return tostring(o)
   end
-end]]--
+end
 
 local airbaseDeltaAmmo = {}
 function buildAirbaseDeltaAmmo()
@@ -26,20 +26,32 @@ function buildAirbaseDeltaAmmo()
       if deltaAmount ~= 0 then
         local airbase = Airbase.getByName(airbaseName)
         local airbaseId = airbase:getID()
-        s = s..""..airbaseId..","..ammoType..","..deltaAmount.."\n"
+        if s ~= "" then
+          s = s..","
+        end
+        s = s.."{\"airbase\":"..airbaseId..",\"type\":\""..ammoType.."\",\"amount\":"..deltaAmount.."}\n"
       end
     end
   end
-  return s
+  return "{\"mission\":\"mission\",\"data\":["..s.."]}\n\n"
 end
 function sendAirbaseDeltaAmmo()
   local s = buildAirbaseDeltaAmmo()
-  if s ~= '' then
-    env.info("---------- SENDING:\n"..s.."\n", false)
+  if s ~= "" then
+    env.info("---------- SENDING:\n"..s, false)
     tcp:connect(host, port)
     tcp:send(s)
     tcp:close()
   end
+end
+function changeAirbaseDeltaAmmo(airbaseKey, typeKey, amount)
+  if not airbaseDeltaAmmo[airbaseKey] then
+    airbaseDeltaAmmo[airbaseKey] = {}
+  end
+  if not airbaseDeltaAmmo[airbaseKey][typeKey] then 
+    airbaseDeltaAmmo[airbaseKey][typeKey] = 0
+  end
+  airbaseDeltaAmmo[airbaseKey][typeKey] = airbaseDeltaAmmo[airbaseKey][typeKey] + amount
 end
 
 local Event_Handler = {}
@@ -51,20 +63,24 @@ function Event_Handler:onEvent(event)
     if unit and event.place then
       local airbaseName = event.place:getName()
       local unitAmmo = unit:getAmmo()
+      local typeName = unit:getDesc().typeName
+      if typeName then
+        -- This is the plane itself
+        if event.id == world.event.S_EVENT_TAKEOFF then
+          changeAirbaseDeltaAmmo(airbaseName, typeName, -1)
+        elseif event.id == world.event.S_EVENT_LAND then
+          changeAirbaseDeltaAmmo(airbaseName, typeName, 1)
+        end
+      end
       if unitAmmo then
+        -- This is for the ammp for the plane
         for k,v in pairs(unit:getAmmo()) do
           ammoType = tostring(v.desc.typeName)
           ammoAmount = v.count
-          if not airbaseDeltaAmmo[airbaseName] then
-            airbaseDeltaAmmo[airbaseName] = {}
-          end
-          if not airbaseDeltaAmmo[airbaseName][ammoType] then 
-            airbaseDeltaAmmo[airbaseName][ammoType] = 0
-          end
           if event.id == world.event.S_EVENT_TAKEOFF then
-            airbaseDeltaAmmo[airbaseName][ammoType] = airbaseDeltaAmmo[airbaseName][ammoType] - ammoAmount
+            changeAirbaseDeltaAmmo(airbaseName, ammoType, -1)
           elseif event.id == world.event.S_EVENT_LAND then
-            airbaseDeltaAmmo[airbaseName][ammoType] = airbaseDeltaAmmo[airbaseName][ammoType] + ammoAmount
+            changeAirbaseDeltaAmmo(airbaseName, ammoType, 1)
           end
         end
       end
