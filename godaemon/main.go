@@ -3,11 +3,13 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"io"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"os/user"
 	"strings"
 	"time"
 )
@@ -16,6 +18,7 @@ var DCSFF_SERVER_ID = getEnv("DCSFF_SERVER_ID", "server1")
 var DCSFF_LISTEN_PORT = getEnv("DCSFF_LISTEN_PORT", "5555")
 var DCSFF_POLL_FOR_ACTIONS = getEnv("DCSFF_POLL_FOR_ACTIONS", "http://localhost:8080/daemon-api/actions")
 var DCSFF_POST_WAREHOUSE = getEnv("DCSFF_POST_WAREHOUSE", "http://localhost:8080/daemon-api/warehouses")
+var DCSFF_NEXT_MISSION = getEnv("DCSFF_POST_WAREHOUSE", "http://localhost:8080/daemon-api/missions")
 var DCSFF_APITOKEN = getEnv("DCSFF_APITOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZXMiOlsiZGFlbW9uIl19.9jKMYjh89WT190T8IUP0qUcL8N4mfox7EcoQurlAv0g")
 
 func getEnv(key, fallback string) string {
@@ -24,9 +27,54 @@ func getEnv(key, fallback string) string {
 	}
 	return fallback
 }
+func downloadFile(filepath string, url string) error {
+	// Get the data
+	req, err := http.NewRequest("GET", DCSFF_NEXT_MISSION+"/"+DCSFF_SERVER_ID, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+DCSFF_APITOKEN)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	// Create the file
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
+func startNewMission() {
+	log.Println("Starting new mission, fetching file from server.")
+	usr, err := user.Current()
+	if err != nil {
+		return
+	}
+	fromurl := DCSFF_NEXT_MISSION + "/" + DCSFF_SERVER_ID
+	path := usr.HomeDir + "\\Saved Games\\" + DCSFF_SERVER_ID + "\\mission.miz"
+	log.Println("downloading mission: " + fromurl + " >>> " + path)
+	if err := downloadFile(path, fromurl); err != nil {
+		log.Println(err)
+	} else {
+
+	}
+}
 
 func getNextAction() string {
-	resp, err := http.Get(DCSFF_POLL_FOR_ACTIONS + "/" + DCSFF_SERVER_ID)
+	req, err := http.NewRequest("GET", DCSFF_POLL_FOR_ACTIONS+"/"+DCSFF_SERVER_ID, nil)
+	if err != nil {
+		return "{}"
+	}
+	req.Header.Set("Authorization", "Bearer "+DCSFF_APITOKEN)
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return "{}"
 	}
@@ -122,7 +170,11 @@ func startPolling() {
 		for {
 			select {
 			case <-ticker.C:
-				getNextAction()
+				s := getNextAction()
+				switch s {
+				case "\"START_NEW_MISSION\"":
+					startNewMission()
+				}
 			}
 		}
 	}()
