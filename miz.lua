@@ -80,9 +80,9 @@ function Event_Handler:onEvent(event)
           ammoType = tostring(v.desc.typeName)
           ammoAmount = v.count
           if event.id == world.event.S_EVENT_TAKEOFF then
-            changeAirbaseDeltaAmmo(airbaseName, ammoType, -1)
+            changeAirbaseDeltaAmmo(airbaseName, ammoType, -ammoAmount)
           elseif event.id == world.event.S_EVENT_LAND then
-            changeAirbaseDeltaAmmo(airbaseName, ammoType, 1)
+            changeAirbaseDeltaAmmo(airbaseName, ammoType, ammoAmount)
           end
         end
       end
