@@ -20,6 +20,69 @@ local host, port = "localhost", 5555
 package.path = package.path.. ';.\\Scripts\\?.lua;.\\LuaSocket\\?.lua;'
 local socket = require("socket")
 
+
+-- lazy initialize/position units
+function positionAndActivate(cntry_id, group_data, unit_data)
+  _, _, lat = string.find(group_data.name, "%[lat:([0-9%.]+)%]")
+  _, _, lon = string.find(group_data.name, "%[lon:([0-9%.]+)%]")
+  local point = coord.LLtoLO(lat, lon)
+  local newGroupData = {
+    ["visible"] = false,
+    ["taskSelected"] = true,
+    ["route"] = {},
+    ["groupId"] = 2,
+    ["tasks"] = {}, 
+    ["hidden"] = false,
+    ["y"] = point.z,
+    ["x"] = point.x,
+    ["name"] = "Ground Group",
+    ["start_time"] = 0,
+    ["task"] = "Ground Nothing",
+    ["units"] = {
+      [1] = {
+        ["type"] = unit_data.type,
+        ["transportable"] = {["randomTransportable"] = false},
+        ["unitId"] = 2,
+        ["skill"] = "Excellent",
+        ["y"] = point.z,
+        ["x"] = point.x,
+        ["name"] = "",
+        ["playerCanDrive"] = true,
+        ["heading"] = 0,
+      },
+    },
+  }
+  env.info("\n\n\n"..group_data.name.."  LAT: "..lat.."  LON: "..lon.. "  unitcoords: "..dump(point).."\n"..dump(newGroupData), false)
+  coalition.addGroup(cntry_id, Group.Category.GROUND, newGroupData)
+end
+for coa_name, coa_data in pairs(env.mission.coalition) do
+  if (coa_name == 'red' or coa_name == 'blue') and type(coa_data) == 'table' then
+    if coa_data.country then
+      for cntry_id, cntry_data in pairs(coa_data.country) do
+        if type(cntry_data) == 'table' then
+          for obj_type_name, obj_type_data in pairs(cntry_data) do
+            if obj_type_name == "vehicle" then
+              if ((type(obj_type_data) == 'table') and obj_type_data.group and (type(obj_type_data.group) == 'table') and (#obj_type_data.group > 0)) then
+                for group_num, group_data in pairs(obj_type_data.group) do
+                  if group_data and group_data.units and type(group_data.units) == 'table' then
+                    if string.match(group_data.name, '%[lat:.+%]') and  string.match(group_data.name, '%[lon:.+%]') then
+                      for unit_num, unit_data in pairs(group_data.units) do
+                        positionAndActivate(cntry_id, group_data, unit_data)
+                      end
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+end
+
+
+
 local airbaseDeltaAmmo = {}
 function buildAirbaseDeltaAmmo()
   local s = ""
