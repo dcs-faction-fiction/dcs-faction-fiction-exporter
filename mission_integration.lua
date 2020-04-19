@@ -20,7 +20,39 @@ local host, port = "localhost", 5555
 package.path = package.path.. ';.\\Scripts\\?.lua;.\\LuaSocket\\?.lua;'
 local socket = require("socket")
 
+function sendToDaemon(cmd, s)
+  env.info("---------- CONNECTING: "..host..":"..port, false)
+  local c = assert(socket.connect(host, port))
+  env.info("---------- SENDING: "..cmd..s, false)
+  c:send(cmd..s.."\n\n")
+  c:close()
+  env.info("---------- CLOSED", false)
+end
 
+
+
+
+
+-------------------------------------------------------------------------------
+
+--   U N I T   M A N A G E M E N T
+
+-------------------------------------------------------------------------------
+
+local deadUnits = {}
+
+function sendDeadUnits()
+  local s = ""
+  local c = "["
+  for k,v in pairs(deadUnits) do
+    s = s..c.."\""..v.."\""
+    c = ","
+  end
+  if s and s ~= "" then
+    s = s.."]"
+    sendToDaemon("D", s)
+  end
+end
 -- lazy initialize/position units
 function positionAndActivate(cntry_id, group_data, unit_data)
   _, _, lat = string.find(group_data.name, "%[lat:([0-9%.]+)%]")
@@ -52,7 +84,7 @@ function positionAndActivate(cntry_id, group_data, unit_data)
       },
     },
   }
-  env.info("\n\n\n"..group_data.name.."  LAT: "..lat.."  LON: "..lon.. "  unitcoords: "..dump(point).."\n"..dump(newGroupData), false)
+  env.info("---------- LAZY INIT OF: "..group_data.name.."  LAT: "..lat.."  LON: "..lon, false)
   coalition.addGroup(cntry_id, Group.Category.GROUND, newGroupData)
 end
 for coa_name, coa_data in pairs(env.mission.coalition) do
@@ -83,7 +115,16 @@ end
 
 
 
+
+-------------------------------------------------------------------------------
+
+--   A I R B A S E   W A R E H O U S E S
+
+-------------------------------------------------------------------------------
+
+
 local airbaseDeltaAmmo = {}
+
 function buildAirbaseDeltaAmmo()
   local s = ""
   for airbaseName,ammo in pairs(airbaseDeltaAmmo) do
@@ -96,19 +137,16 @@ function buildAirbaseDeltaAmmo()
       end
     end
   end
-  return "{\"mission\":\"mission\",\"data\":["..s.."]}\n\n"
+  return "{\"data\":["..s.."]}"
 end
+
 function sendAirbaseDeltaAmmo()
   local s = buildAirbaseDeltaAmmo()
-  if s ~= "" then
-    env.info("---------- CONNECTING: "..host..":"..port, false)
-    local c = assert(socket.connect(host, port))
-    env.info("---------- SENDING:\n"..s, false)
-    c:send(s)
-    env.info("---------- CLOSING:", false)
-    c:close()
+  if s and s ~= "" then
+    sendToDaemon("W", s)
   end
 end
+
 function changeAirbaseDeltaAmmo(airbaseKey, typeKey, amount)
   if not airbaseDeltaAmmo[airbaseKey] then
     airbaseDeltaAmmo[airbaseKey] = {}
@@ -119,10 +157,30 @@ function changeAirbaseDeltaAmmo(airbaseKey, typeKey, amount)
   airbaseDeltaAmmo[airbaseKey][typeKey] = airbaseDeltaAmmo[airbaseKey][typeKey] + amount
 end
 
+
+
+
+-------------------------------------------------------------------------------
+
+--   E V E N T S
+
+-------------------------------------------------------------------------------
+
+
 local Event_Handler = {}
 function Event_Handler:onEvent(event)
-  if event.id == world.event.S_EVENT_MISSION_END then
+  if event.id == world.event.S_EVENT_MISSION_START then
+    sendToDaemon("S", "")
+  elseif event.id == world.event.S_EVENT_MISSION_END then
     sendAirbaseDeltaAmmo()
+    sendDeadUnits()
+  elseif event.id == world.event.S_EVENT_DEAD then
+    local group = Unit.getGroup(event.initiator)
+    _, _, uuid = string.find(group:getName(), "%[UUID:(.+)%]")
+    if uuid and uuid ~= "" then
+      env.info("---------- DESTROYED: "..uuid)
+      table.insert(deadUnits, uuid)
+    end
   elseif event.id == world.event.S_EVENT_TAKEOFF or event.id == world.event.S_EVENT_LAND then
     local unit = event.initiator
     if unit and event.place then

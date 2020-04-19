@@ -18,6 +18,7 @@ var DCSFF_SERVER_ID = getEnv("DCSFF_SERVER_ID", "server1")
 var DCSFF_LISTEN_PORT = getEnv("DCSFF_LISTEN_PORT", "5555")
 var DCSFF_POLL_FOR_ACTIONS = getEnv("DCSFF_POLL_FOR_ACTIONS", "http://localhost:8080/daemon-api/actions")
 var DCSFF_POST_WAREHOUSE = getEnv("DCSFF_POST_WAREHOUSE", "http://localhost:8080/daemon-api/warehouses")
+var DCSFF_POST_DEADUNITS = getEnv("DCSFF_POST_DEADUNITS", "http://localhost:8080/daemon-api/deadunits")
 var DCSFF_NEXT_MISSION = getEnv("DCSFF_POST_WAREHOUSE", "http://localhost:8080/daemon-api/missions")
 var DCSFF_APITOKEN = getEnv("DCSFF_APITOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZXMiOlsiZGFlbW9uIl19.9jKMYjh89WT190T8IUP0qUcL8N4mfox7EcoQurlAv0g")
 
@@ -86,9 +87,8 @@ func getNextAction() string {
 	return string(body)
 }
 
-func sendWarehouse(json string) {
-	log.Println("Posting message: " + json)
-	req, err := http.NewRequest("POST", DCSFF_POST_WAREHOUSE+"/"+DCSFF_SERVER_ID, bytes.NewBuffer([]byte(json)))
+func sendPost(url string, json string) {
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(json)))
 	if err != nil {
 		log.Println(err)
 		return
@@ -130,9 +130,21 @@ func handleConnection(conn net.Conn) {
 		s = strings.Trim(s, " ")
 		s = strings.Trim(s, "\n")
 		if s == "" {
+			log.Println("Received message: " + s)
 			json := apimessage
 			apimessage = ""
-			sendWarehouse(json)
+			command := json[0:1]
+			json = json[1:]
+			switch command {
+			case "S":
+				log.Println("Mission started.")
+			case "W":
+				log.Println("Sending warehouses: " + json)
+				sendPost(DCSFF_POST_WAREHOUSE+"/"+DCSFF_SERVER_ID, json)
+			case "D":
+				log.Println("Sending dead units: " + json)
+				sendPost(DCSFF_POST_DEADUNITS+"/"+DCSFF_SERVER_ID, json)
+			}
 			return
 		} else {
 			apimessage = apimessage + s
