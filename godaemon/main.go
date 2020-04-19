@@ -16,11 +16,14 @@ import (
 
 var DCSFF_SERVER_ID = getEnv("DCSFF_SERVER_ID", "server1")
 var DCSFF_LISTEN_PORT = getEnv("DCSFF_LISTEN_PORT", "5555")
-var DCSFF_POLL_FOR_ACTIONS = getEnv("DCSFF_POLL_FOR_ACTIONS", "http://localhost:8080/daemon-api/actions")
-var DCSFF_POST_WAREHOUSE = getEnv("DCSFF_POST_WAREHOUSE", "http://localhost:8080/daemon-api/warehouses")
-var DCSFF_POST_DEADUNITS = getEnv("DCSFF_POST_DEADUNITS", "http://localhost:8080/daemon-api/deadunits")
-var DCSFF_NEXT_MISSION = getEnv("DCSFF_POST_WAREHOUSE", "http://localhost:8080/daemon-api/missions")
+var DCSFF_API = getEnv("DCSFF_API", "http://localhost:8080")
 var DCSFF_APITOKEN = getEnv("DCSFF_APITOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZXMiOlsiZGFlbW9uIl19.9jKMYjh89WT190T8IUP0qUcL8N4mfox7EcoQurlAv0g")
+
+// These remain constant in the api side implementation
+var DCSFF_POLL_FOR_ACTIONS = DCSFF_API + "/daemon-api/actions"
+var DCSFF_POST_WAREHOUSE = DCSFF_API + "/daemon-api/warehouses"
+var DCSFF_POST_DEADUNITS = DCSFF_API + "/daemon-api/deadunits"
+var DCSFF_NEXT_MISSION = DCSFF_API + "/daemon-api/missions"
 
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
