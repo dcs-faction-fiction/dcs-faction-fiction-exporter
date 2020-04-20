@@ -53,32 +53,36 @@ function sendDeadUnits()
     sendToDaemon("D", s)
   end
 end
+
+local nextid = 100;
+
 -- lazy initialize/position units
 function positionAndActivate(cntry_id, group_data, unit_data)
   _, _, lat = string.find(group_data.name, "%[lat:([0-9%.]+)%]")
   _, _, lon = string.find(group_data.name, "%[lon:([0-9%.]+)%]")
   local point = coord.LLtoLO(lat, lon)
+  nextid = nextid + 1
   local newGroupData = {
     ["visible"] = false,
     ["taskSelected"] = true,
     ["route"] = {},
-    ["groupId"] = 2,
+    ["groupId"] = nextid,
     ["tasks"] = {}, 
     ["hidden"] = false,
     ["y"] = point.z,
     ["x"] = point.x,
-    ["name"] = "Ground Group",
+    ["name"] = "G"..nextid,
     ["start_time"] = 0,
     ["task"] = "Ground Nothing",
     ["units"] = {
       [1] = {
         ["type"] = unit_data.type,
         ["transportable"] = {["randomTransportable"] = false},
-        ["unitId"] = 2,
+        ["unitId"] = nextid,
         ["skill"] = "Excellent",
         ["y"] = point.z,
         ["x"] = point.x,
-        ["name"] = "",
+        ["name"] = "U"..nextid,
         ["playerCanDrive"] = true,
         ["heading"] = 0,
       },
