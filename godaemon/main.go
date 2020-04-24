@@ -25,6 +25,8 @@ var DCSFF_POST_WAREHOUSE = DCSFF_API + "/daemon-api/warehouses"
 var DCSFF_POST_DEADUNITS = DCSFF_API + "/daemon-api/deadunits"
 var DCSFF_NEXT_MISSION = DCSFF_API + "/daemon-api/missions"
 
+var firstPoll = true
+
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
@@ -86,6 +88,10 @@ func getNextAction() string {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "{}"
+	}
+	if firstPoll {
+		firstPoll = false
+		log.Println("First poll successful, token is valid.")
 	}
 	return string(body)
 }
