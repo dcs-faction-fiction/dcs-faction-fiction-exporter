@@ -23,6 +23,7 @@ var DCSFF_APITOKEN = getEnv("DCSFF_APITOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXV
 var DCSFF_POLL_FOR_ACTIONS = DCSFF_API + "/daemon-api/actions"
 var DCSFF_POST_WAREHOUSE = DCSFF_API + "/daemon-api/warehouses"
 var DCSFF_POST_DEADUNITS = DCSFF_API + "/daemon-api/deadunits"
+var DCSFF_POST_MOVEDUNITS = DCSFF_API + "/daemon-api/movedunits"
 var DCSFF_NEXT_MISSION = DCSFF_API + "/daemon-api/missions"
 
 var firstPoll = true
@@ -153,6 +154,9 @@ func handleConnection(conn net.Conn) {
 			case "D":
 				log.Println("Sending dead units: " + json)
 				sendPost(DCSFF_POST_DEADUNITS+"/"+DCSFF_SERVER_ID, json)
+			case "M":
+				log.Println("Sending moved units: " + json)
+				sendPost(DCSFF_POST_MOVEDUNITS+"/"+DCSFF_SERVER_ID, json)
 			}
 			return
 		} else {
