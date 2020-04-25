@@ -72,6 +72,13 @@ function onMissionStart()
   env.info(logpref.."Positioning units OK", false)
 end
 
+function onMissionEnd()
+  calculateMovedUnits()
+  sendAirbaseDeltaAmmo()
+  sendDeadUnits()
+  sendMovedUnits()
+end
+
 -------------------------------------------------------------------------------
 
 --   U N I T   M A N A G E M E N T
@@ -84,15 +91,20 @@ local movedUnits = {}
 local spawnedGroups = {}
 
 function calculateMovedUnits()
+  env.info(logpref.."Calculating moved units", false)
   for k,v in pairs(spawnedGroups) do
-    local olat = originalUnitsPosition[k].lat
-    local olon = originalUnitsPosition[k].lon
     local u = v:getUnit(1)
-    local nlat, nlon = coord.LOtoLL({x = u.x, y = 0, z = u.y})
-    if nlat ~= olat or nlon ~= olon then
+    local p = u:getPosition()
+    local ox = math.modf(originalUnitsPosition[k].x)
+    local oy = math.modf(originalUnitsPosition[k].y)
+    local nx = math.modf(p.p.x)
+    local ny = math.modf(p.p.z)
+    if ox ~= nx or oy ~= ny then
+      env.info(logpref.."Calculating moved units:"..u:getName().." ox="..ox.." ox="..ox.." nx="..nx.." ny="..ny, false)
+      local lat, lon = coord.LOtoLL({x = nx, y = 0, z = ny})
       movedUnits[k] = {}
-      movedUnits[k].lat = nlat
-      movedUnits[k].lon = nlon
+      movedUnits[k].lat = lat
+      movedUnits[k].lon = lon
     end
   end
 end
@@ -158,8 +170,8 @@ function positionAndActivate(cntry_id, group_data, unit_data)
   local group = coalition.addGroup(cntry_id, Group.Category.GROUND, ngd)
   spawnedGroups[uuid] = group
   originalUnitsPosition[uuid] = {
-    ["lat"] = lat,
-    ["lon"] = lon
+    ["x"] = point.x,
+    ["y"] = point.z
   }
   env.info(logpref.."LAZY INIT OF: "..group_data.name, false)
 end
@@ -223,9 +235,7 @@ function Event_Handler:onEvent(event)
   if event.id == world.event.S_EVENT_MISSION_START then
     onMissionStart()
   elseif event.id == world.event.S_EVENT_MISSION_END then
-    sendAirbaseDeltaAmmo()
-    sendDeadUnits()
-    sendMovedUnits()
+    onMissionEnd()
   elseif event.id == world.event.S_EVENT_DEAD then
     local group = Unit.getGroup(event.initiator)
     _, _, uuid = string.find(group:getName(), "%[UUID:(.+)%]")
