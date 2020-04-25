@@ -34,6 +34,11 @@ function sendToDaemon(cmd, s)
   env.info(logpref.."CLOSED", false)
 end
 
+function getProperty(property, name)
+  _, _, result = string.find(name, "%["..property..":([^\]]+)%]")
+  return result
+end
+
 -------------------------------------------------------------------------------
 
 --   M  I S S I O N    M A N A G E M E N T
@@ -115,7 +120,7 @@ function sendMovedUnits()
   for k,v in pairs(movedUnits) do
     local l = "\"latitude\": "..v.lat..",\"longitude\":"..v.lon..",\"altitude\":0,\"angle\":0"
     local u = "{\"id\": \""..k.."\", \"location\":{"..l.."}}"
-    s = s..c.."\""..u.."\""
+    s = s..c..u
     c = ","
   end
   if s and s ~= "" then
@@ -139,9 +144,9 @@ end
 
 -- lazy initialize/position units
 function positionAndActivate(cntry_id, group_data, unit_data)
-  _, _, uuid = string.find(group_data.name, "%[UUID:(.+)%]")
-  _, _, lat = string.find(group_data.name, "%[lat:([0-9%.]+)%]")
-  _, _, lon = string.find(group_data.name, "%[lon:([0-9%.]+)%]")
+  local uuid = getProperty("UUID", group_data.name)
+  local lat = getProperty("lat", group_data.name)
+  local lon = getProperty("lon", group_data.name)
   local point = coord.LLtoLO(lat, lon)
   local ngd = {
     ["route"] = {},
@@ -238,7 +243,7 @@ function Event_Handler:onEvent(event)
     onMissionEnd()
   elseif event.id == world.event.S_EVENT_DEAD then
     local group = Unit.getGroup(event.initiator)
-    _, _, uuid = string.find(group:getName(), "%[UUID:(.+)%]")
+    local uuid = getProperty("UUID", group_data.name)
     if uuid and uuid ~= "" then
       env.info(logpref.."DESTROYED: "..uuid)
       table.insert(deadUnits, uuid)
