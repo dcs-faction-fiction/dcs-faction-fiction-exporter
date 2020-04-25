@@ -1,37 +1,76 @@
 do
 
+local logpref = "DCSFF /----------/ "
+env.info(logpref.."Included", false)
+
+env.info(logpref.."Adding sockets", false)
+package.path = package.path.. ';.\\Scripts\\?.lua;.\\LuaSocket\\?.lua;'
+local socket = require("socket")
+local host = "localhost"
+local port = 5555
+env.info(logpref.."Adding sockets OK", false)
 
 function dump(o)
   if type(o) == 'table' then
-    local s = '{'
+    local s = '{\n'
     for k,v in pairs(o) do
       if type(k) ~= 'number' then k = '"'..k..'"' end
-      s = s .. '['..k..'] = ' .. dump(v) .. ','
+      s = s .. '['..k..'] = ' .. dump(v) .. ',\n'
     end
-    return s .. '}\n'
+    return s .. '}'
+  elseif type(o) == 'string' then
+    return '"'..tostring(o)..'"'
   else
     return tostring(o)
   end
 end
 
-
-
-local host, port = "localhost", 5555
-package.path = package.path.. ';.\\Scripts\\?.lua;.\\LuaSocket\\?.lua;'
-local socket = require("socket")
-
 function sendToDaemon(cmd, s)
-  env.info("---------- CONNECTING: "..host..":"..port, false)
+  env.info(logpref.."CONNECTING: "..host..":"..port, false)
   local c = assert(socket.connect(host, port))
-  env.info("---------- SENDING: "..cmd..s, false)
+  env.info(logpref.."SENDING: "..cmd..s, false)
   c:send(cmd..s.."\n\n")
   c:close()
-  env.info("---------- CLOSED", false)
+  env.info(logpref.."CLOSED", false)
 end
 
+-------------------------------------------------------------------------------
 
+--   M  I S S I O N    M A N A G E M E N T
 
+-------------------------------------------------------------------------------
 
+function onMissionStart()
+  env.info(logpref.."Initiating mission start triggers", false)
+  sendToDaemon("S", "")
+  env.info(logpref.."Positioning units", false)
+  for coa_name, coa_data in pairs(env.mission.coalition) do
+    if (coa_name == 'red' or coa_name == 'blue') and type(coa_data) == 'table' then
+      if coa_data.country then
+        for cntry_num, cntry_data in pairs(coa_data.country) do
+          if type(cntry_data) == 'table' then
+            for obj_type_name, obj_type_data in pairs(cntry_data) do
+              if obj_type_name == "vehicle" then
+                if ((type(obj_type_data) == 'table') and obj_type_data.group and (type(obj_type_data.group) == 'table') and (#obj_type_data.group > 0)) then
+                  for group_num, group_data in pairs(obj_type_data.group) do
+                    if group_data and group_data.units and type(group_data.units) == 'table' then
+                      if string.match(group_data.name, '%[lat:.+%]') and  string.match(group_data.name, '%[lon:.+%]') then
+                        for unit_num, unit_data in pairs(group_data.units) do
+                          positionAndActivate(cntry_data.id, group_data, unit_data)
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+  env.info(logpref.."Positioning units OK", false)
+end
 
 -------------------------------------------------------------------------------
 
@@ -40,6 +79,38 @@ end
 -------------------------------------------------------------------------------
 
 local deadUnits = {}
+local originalUnitsPosition = {}
+local movedUnits = {}
+local spawnedGroups = {}
+
+function calculateMovedUnits()
+  for k,v in pairs(spawnedGroups) do
+    local olat = originalUnitsPosition[k].lat
+    local olon = originalUnitsPosition[k].lon
+    local u = v:getUnit(1)
+    local nlat, nlon = coord.LOtoLL({x = u.x, y = 0, z = u.y})
+    if nlat ~= olat or nlon ~= olon then
+      movedUnits[k] = {}
+      movedUnits[k].lat = nlat
+      movedUnits[k].lon = nlon
+    end
+  end
+end
+
+function sendMovedUnits()
+  local s = ""
+  local c = "["
+  for k,v in pairs(movedUnits) do
+    local l = "\"latitude\": "..v.lat..",\"longitude\":"..v.lon..",\"altitude\":0,\"angle\":0"
+    local u = "{\"id\": \""..k.."\", \"location\":{"..l.."}}"
+    s = s..c.."\""..u.."\""
+    c = ","
+  end
+  if s and s ~= "" then
+    s = s.."]"
+    sendToDaemon("M", s)
+  end
+end
 
 function sendDeadUnits()
   local s = ""
@@ -54,67 +125,43 @@ function sendDeadUnits()
   end
 end
 
-local nextid = 100;
-
 -- lazy initialize/position units
 function positionAndActivate(cntry_id, group_data, unit_data)
+  _, _, uuid = string.find(group_data.name, "%[UUID:(.+)%]")
   _, _, lat = string.find(group_data.name, "%[lat:([0-9%.]+)%]")
   _, _, lon = string.find(group_data.name, "%[lon:([0-9%.]+)%]")
   local point = coord.LLtoLO(lat, lon)
-  nextid = nextid + 1
-  local newGroupData = {
-    ["visible"] = false,
-    ["taskSelected"] = true,
+  local ngd = {
     ["route"] = {},
-    ["groupId"] = nextid,
-    ["tasks"] = {}, 
+    ["tasks"] = {},
+    ["visible"] = true,
     ["hidden"] = false,
-    ["y"] = point.z,
-    ["x"] = point.x,
-    ["name"] = "G"..nextid,
+    ["uncontrollable"] = false,
+    ["name"] = "G "..tostring(group_data.name),
     ["start_time"] = 0,
     ["task"] = "Ground Nothing",
+    ["x"] = tonumber(point.x),
+    ["y"] = tonumber(point.z),
     ["units"] = {
       [1] = {
-        ["type"] = unit_data.type,
-        ["transportable"] = {["randomTransportable"] = false},
-        ["unitId"] = nextid,
-        ["skill"] = "Excellent",
-        ["y"] = point.z,
-        ["x"] = point.x,
-        ["name"] = "U"..nextid,
-        ["playerCanDrive"] = true,
+        ["type"] = tostring(unit_data.type),
+        ["name"] = "U "..tostring(group_data.name),
         ["heading"] = 0,
-      },
-    },
+        ["playerCanDrive"] = true,
+        ["skill"] = "Average",
+        ["x"] = tonumber(point.x),
+        ["y"] = tonumber(point.z),
+        ["transportable"] = {["randomTransportable"] = false}
+      }
+    }
   }
-  env.info("---------- LAZY INIT OF: "..group_data.name.."  LAT: "..lat.."  LON: "..lon, false)
-  coalition.addGroup(cntry_id, Group.Category.GROUND, newGroupData)
-end
-for coa_name, coa_data in pairs(env.mission.coalition) do
-  if (coa_name == 'red' or coa_name == 'blue') and type(coa_data) == 'table' then
-    if coa_data.country then
-      for cntry_id, cntry_data in pairs(coa_data.country) do
-        if type(cntry_data) == 'table' then
-          for obj_type_name, obj_type_data in pairs(cntry_data) do
-            if obj_type_name == "vehicle" then
-              if ((type(obj_type_data) == 'table') and obj_type_data.group and (type(obj_type_data.group) == 'table') and (#obj_type_data.group > 0)) then
-                for group_num, group_data in pairs(obj_type_data.group) do
-                  if group_data and group_data.units and type(group_data.units) == 'table' then
-                    if string.match(group_data.name, '%[lat:.+%]') and  string.match(group_data.name, '%[lon:.+%]') then
-                      for unit_num, unit_data in pairs(group_data.units) do
-                        positionAndActivate(cntry_id, group_data, unit_data)
-                      end
-                    end
-                  end
-                end
-              end
-            end
-          end
-        end
-      end
-    end
-  end
+  local group = coalition.addGroup(cntry_id, Group.Category.GROUND, ngd)
+  spawnedGroups[uuid] = group
+  originalUnitsPosition[uuid] = {
+    ["lat"] = lat,
+    ["lon"] = lon
+  }
+  env.info(logpref.."LAZY INIT OF: "..group_data.name, false)
 end
 
 
@@ -174,15 +221,16 @@ end
 local Event_Handler = {}
 function Event_Handler:onEvent(event)
   if event.id == world.event.S_EVENT_MISSION_START then
-    sendToDaemon("S", "")
+    onMissionStart()
   elseif event.id == world.event.S_EVENT_MISSION_END then
     sendAirbaseDeltaAmmo()
     sendDeadUnits()
+    sendMovedUnits()
   elseif event.id == world.event.S_EVENT_DEAD then
     local group = Unit.getGroup(event.initiator)
     _, _, uuid = string.find(group:getName(), "%[UUID:(.+)%]")
     if uuid and uuid ~= "" then
-      env.info("---------- DESTROYED: "..uuid)
+      env.info(logpref.."DESTROYED: "..uuid)
       table.insert(deadUnits, uuid)
     end
   elseif event.id == world.event.S_EVENT_TAKEOFF or event.id == world.event.S_EVENT_LAND then
