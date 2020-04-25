@@ -9,12 +9,14 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/user"
 	"strings"
 	"time"
 )
 
 var DCSFF_SERVER_ID = getEnv("DCSFF_SERVER_ID", "server1")
+var DCSFF_SERVER_EXEC = getEnv("DCSFF_SERVER_EXEC", "C:\\DCS\\bin\\dcs.exe")
 var DCSFF_LISTEN_PORT = getEnv("DCSFF_LISTEN_PORT", "5555")
 var DCSFF_API = getEnv("DCSFF_API", "http://localhost:8080")
 var DCSFF_APITOKEN = getEnv("DCSFF_APITOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZXMiOlsiZGFlbW9uIl19.9jKMYjh89WT190T8IUP0qUcL8N4mfox7EcoQurlAv0g")
@@ -65,12 +67,28 @@ func startNewMission() {
 		return
 	}
 	fromurl := DCSFF_NEXT_MISSION + "/" + DCSFF_SERVER_ID
-	path := usr.HomeDir + "\\Saved Games\\" + DCSFF_SERVER_ID + "\\mission.miz"
+	dcsuserpath := usr.HomeDir + "\\Saved Games\\" + DCSFF_SERVER_ID
+	path := dcsuserpath + "\\mission.miz"
 	log.Println("downloading mission: " + fromurl + " >>> " + path)
 	if err := downloadFile(path, fromurl); err != nil {
 		log.Println(err)
 	} else {
+		cmd := exec.Command(DCSFF_SERVER_EXEC,
+			"--server",
+			"--norender",
+			"-w",
+			DCSFF_SERVER_ID)
 
+		err := cmd.Start()
+		if err != nil {
+			log.Println(err)
+		}
+		log.Printf("DCS running...")
+		err = cmd.Wait()
+		log.Printf("DCS ended")
+		if err != nil {
+			log.Println(err)
+		}
 	}
 }
 
