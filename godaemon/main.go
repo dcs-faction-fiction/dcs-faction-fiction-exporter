@@ -30,6 +30,8 @@ var DCSFF_NEXT_MISSION = DCSFF_API + "/daemon-api/missions"
 
 var firstPoll = true
 
+var command *exec.Cmd = nil
+
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
@@ -73,22 +75,31 @@ func startNewMission() {
 	if err := downloadFile(path, fromurl); err != nil {
 		log.Println(err)
 	} else {
-		cmd := exec.Command(DCSFF_SERVER_EXEC,
+		command = exec.Command(DCSFF_SERVER_EXEC,
 			"--server",
 			"--norender",
 			"-w",
 			DCSFF_SERVER_ID)
 
-		err := cmd.Start()
+		err := command.Start()
 		if err != nil {
 			log.Println(err)
 		}
 		log.Printf("DCS running...")
-		err = cmd.Wait()
+		err = command.Wait()
 		log.Printf("DCS ended")
 		if err != nil {
 			log.Println(err)
 		}
+	}
+}
+
+func stopMission() {
+	log.Println("Stop mission received...")
+	if command != nil {
+		log.Println("Stopping server...")
+		command.Process.Kill()
+		command = nil
 	}
 }
 
@@ -131,7 +142,7 @@ func sendPost(url string, json string) {
 	}
 	defer resp.Body.Close()
 
-	if resp.Status != "200 OK" {
+	if resp.Status != "200 OK" && resp.Status != "201 Created" {
 		log.Println("response Status:", resp.Status)
 		log.Println("response Headers:", resp.Header)
 		body, _ := ioutil.ReadAll(resp.Body)
@@ -215,8 +226,10 @@ func startPolling() {
 			case <-ticker.C:
 				s := getNextAction()
 				switch s {
+				case "\"STOP_MISSION\"":
+					go stopMission()
 				case "\"START_NEW_MISSION\"":
-					startNewMission()
+					go startNewMission()
 				}
 			}
 		}

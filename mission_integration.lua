@@ -79,9 +79,10 @@ end
 
 function onMissionEnd()
   calculateMovedUnits()
-  sendAirbaseDeltaAmmo()
   sendDeadUnits()
   sendMovedUnits()
+  -- This is last becasue warehouse info terminates the mission with an event on server side
+  sendAirbaseDeltaAmmo()
 end
 
 -------------------------------------------------------------------------------
