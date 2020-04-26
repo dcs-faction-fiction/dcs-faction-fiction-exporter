@@ -22,11 +22,12 @@ var DCSFF_API = getEnv("DCSFF_API", "http://localhost:8080")
 var DCSFF_APITOKEN = getEnv("DCSFF_APITOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZXMiOlsiZGFlbW9uIl19.9jKMYjh89WT190T8IUP0qUcL8N4mfox7EcoQurlAv0g")
 
 // These remain constant in the api side implementation
-var DCSFF_POLL_FOR_ACTIONS = DCSFF_API + "/daemon-api/actions"
-var DCSFF_POST_WAREHOUSE = DCSFF_API + "/daemon-api/warehouses"
-var DCSFF_POST_DEADUNITS = DCSFF_API + "/daemon-api/deadunits"
-var DCSFF_POST_MOVEDUNITS = DCSFF_API + "/daemon-api/movedunits"
-var DCSFF_NEXT_MISSION = DCSFF_API + "/daemon-api/missions"
+var DCSFF_POLL_FOR_ACTIONS = DCSFF_API + "/daemon-api/" + DCSFF_SERVER_ID + "/actions"
+var DCSFF_POST_WAREHOUSE = DCSFF_API + "/daemon-api/" + DCSFF_SERVER_ID + "/warehouses"
+var DCSFF_POST_DEADUNITS = DCSFF_API + "/daemon-api/" + DCSFF_SERVER_ID + "/deadunits"
+var DCSFF_POST_MOVEDUNITS = DCSFF_API + "/daemon-api/" + DCSFF_SERVER_ID + "/movedunits"
+var DCSFF_NEXT_MISSION = DCSFF_API + "/daemon-api/" + DCSFF_SERVER_ID + "/missions"
+var DCSFF_MISSION_STARTED = DCSFF_API + "/daemon-api/" + DCSFF_SERVER_ID + "/actions/MISSION_STARTED"
 
 var firstPoll = true
 
@@ -40,7 +41,7 @@ func getEnv(key, fallback string) string {
 }
 func downloadFile(filepath string, url string) error {
 	// Get the data
-	req, err := http.NewRequest("GET", DCSFF_NEXT_MISSION+"/"+DCSFF_SERVER_ID, nil)
+	req, err := http.NewRequest("GET", DCSFF_NEXT_MISSION, nil)
 	if err != nil {
 		return err
 	}
@@ -68,7 +69,7 @@ func startNewMission() {
 	if err != nil {
 		return
 	}
-	fromurl := DCSFF_NEXT_MISSION + "/" + DCSFF_SERVER_ID
+	fromurl := DCSFF_NEXT_MISSION
 	dcsuserpath := usr.HomeDir + "\\Saved Games\\" + DCSFF_SERVER_ID
 	path := dcsuserpath + "\\mission.miz"
 	log.Println("downloading mission: " + fromurl + " >>> " + path)
@@ -104,7 +105,7 @@ func stopMission() {
 }
 
 func getNextAction() string {
-	req, err := http.NewRequest("GET", DCSFF_POLL_FOR_ACTIONS+"/"+DCSFF_SERVER_ID, nil)
+	req, err := http.NewRequest("GET", DCSFF_POLL_FOR_ACTIONS, nil)
 	if err != nil {
 		return "{}"
 	}
@@ -119,7 +120,7 @@ func getNextAction() string {
 	if err != nil {
 		return "{}"
 	}
-	if firstPoll {
+	if firstPoll && resp.Status == "200 OK" {
 		firstPoll = false
 		log.Println("First poll successful, token is valid.")
 	}
@@ -127,7 +128,14 @@ func getNextAction() string {
 }
 
 func sendPost(url string, json string) {
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(json)))
+	sendBody("POST", url, json)
+}
+func sendPut(url string, json string) {
+	sendBody("PUT", url, json)
+}
+
+func sendBody(method string, url string, json string) {
+	req, err := http.NewRequest(method, url, bytes.NewBuffer([]byte(json)))
 	if err != nil {
 		log.Println(err)
 		return
@@ -177,15 +185,16 @@ func handleConnection(conn net.Conn) {
 			switch command {
 			case "S":
 				log.Println("Mission started.")
+				sendPut(DCSFF_MISSION_STARTED, json)
 			case "W":
 				log.Println("Sending warehouses: " + json)
-				sendPost(DCSFF_POST_WAREHOUSE+"/"+DCSFF_SERVER_ID, json)
+				sendPost(DCSFF_POST_WAREHOUSE, json)
 			case "D":
 				log.Println("Sending dead units: " + json)
-				sendPost(DCSFF_POST_DEADUNITS+"/"+DCSFF_SERVER_ID, json)
+				sendPost(DCSFF_POST_DEADUNITS, json)
 			case "M":
 				log.Println("Sending moved units: " + json)
-				sendPost(DCSFF_POST_MOVEDUNITS+"/"+DCSFF_SERVER_ID, json)
+				sendPost(DCSFF_POST_MOVEDUNITS, json)
 			}
 			return
 		} else {
