@@ -10,6 +10,19 @@ local host = "localhost"
 local port = 5555
 env.info(logpref.."Adding sockets OK", false)
 
+-- fuel capacity for each vehicle in tons (not kg!)
+-- fuel types
+--   jet_fuel
+--   gasoline
+--   methanol_mixture
+--   diesel
+local fuelCapacity = {
+  ["FA-18C_hornet"] = {
+    ["type"] = "jet_fuel",
+    ["capacity"] = 4.9
+  }
+}
+
 function dump(o)
   if type(o) == 'table' then
     local s = '{\n'
@@ -193,6 +206,7 @@ end
 
 
 local airbaseDeltaAmmo = {}
+local airbaseDeltaFuel = {}
 
 function buildAirbaseDeltaAmmo()
   local s = ""
@@ -203,6 +217,16 @@ function buildAirbaseDeltaAmmo()
           s = s..","
         end
         s = s.."{\"airbase\":\""..airbaseName.."\",\"type\":\""..ammoType.."\",\"amount\":"..deltaAmount.."}\n"
+      end
+    end
+  end
+  for airbaseName,fuel in pairs(airbaseDeltaFuel) do
+    for fuelType,deltaAmount in pairs(fuel) do
+      if deltaAmount ~= 0 then
+        if s ~= "" then
+          s = s..","
+        end
+        s = s.."{\"airbase\":\""..airbaseName.."\",\"type\":\""..fuelType.."\",\"amount\":"..deltaAmount.."}\n"
       end
     end
   end
@@ -224,6 +248,16 @@ function changeAirbaseDeltaAmmo(airbaseKey, typeKey, amount)
     airbaseDeltaAmmo[airbaseKey][typeKey] = 0
   end
   airbaseDeltaAmmo[airbaseKey][typeKey] = airbaseDeltaAmmo[airbaseKey][typeKey] + amount
+end
+
+function changeAirbaseDeltaFuel(airbaseKey, fuelType, tons)
+  if not airbaseDeltaFuel[airbaseKey] then
+    airbaseDeltaFuel[airbaseKey] = {}
+  end
+  if not airbaseDeltaFuel[airbaseKey][fuelType] then 
+    airbaseDeltaFuel[airbaseKey][fuelType] = 0
+  end
+  airbaseDeltaFuel[airbaseKey][fuelType] = airbaseDeltaFuel[airbaseKey][fuelType] + tons
 end
 
 
@@ -253,6 +287,7 @@ function Event_Handler:onEvent(event)
     local unit = event.initiator
     if unit and event.place then
       local airbaseName = event.place:getName()
+      local unitFuel = unit:getFuel()
       local unitAmmo = unit:getAmmo()
       local typeName = unit:getDesc().typeName
       if typeName then
@@ -262,9 +297,20 @@ function Event_Handler:onEvent(event)
         elseif event.id == world.event.S_EVENT_LAND then
           changeAirbaseDeltaAmmo(airbaseName, typeName, 1)
         end
+        -- calculate the fuel
+        if unitFuel ~= 0 and fuelCapacity[typeName] ~= nil then
+          local fuelType = fuelCapacity[typeName].type
+          local fuelTons = unitFuel * fuelCapacity[typeName].capacity
+          env.info(logpref.."Fuel takeoff/landing for "..typeName..", fuel type is "..fuelType..", relative="..unitFuel.." tons="..fuelTons)
+          if event.id == world.event.S_EVENT_TAKEOFF then
+            changeAirbaseDeltaFuel(airbaseName, fuelType, -fuelTons)
+          elseif event.id == world.event.S_EVENT_LAND then
+            changeAirbaseDeltaFuel(airbaseName, fuelType, fuelTons)
+          end
+        end
       end
       if unitAmmo then
-        -- This is for the ammp for the plane
+        -- This is for the ammo for the plane
         for k,v in pairs(unit:getAmmo()) do
           ammoType = tostring(v.desc.typeName)
           ammoAmount = v.count
