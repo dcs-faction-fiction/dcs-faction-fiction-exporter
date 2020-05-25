@@ -204,13 +204,54 @@ function sendDeadUnits()
   end
 end
 
+local groupTemplates = {
+  ["SA_6"] = {
+    "Kub 1S91 str",
+    "Kub 2P25 ln",
+    "Kub 2P25 ln"
+  },
+  ["SA_11"] = {
+    "SA-11 Buk CC 9S470M1",
+    "SA-11 Buk SR 9S18M1",
+    "5p73 s-125 ln",
+    "5p73 s-125 ln"
+  },
+  ["SA_HAWK"] = {
+    "Hawk pcp",
+    "Hawk sr",
+    "Hawk cwar",
+    "Hawk tr",
+    "Hawk ln",
+    "Hawk ln"
+  },
+  ["SA_PATRIOT"] = {
+    "Patriot ECS",
+    "Patriot cp",
+    "Patriot AMG",
+    "Patriot EPP",
+    "Patriot str",
+    "Patriot ln",
+    "Patriot ln",
+    "Patriot ln",
+    "Patriot ln"
+  },
+  ["SA_10"] = {
+    "S-300PS 40B6M tr",
+    "S-300PS 40B6MD sr",
+    "S-300PS 54K6 cp",
+    "S-300PS 64H6E sr",
+    "S-300PS 5P85C ln",
+    "S-300PS 5P85C ln",
+    "S-300PS 5P85C ln",
+    "S-300PS 5P85C ln"
+  }
+}
+
 function makeGroup(templatetype, name, type, x, y, a)
   --env.info("type:"..templatetype,true)
   -- explode groups into predefined templates
-  if templatetype == "SA_6" then
-    return makeSparseUnits(name, {"Kub 1S91 str", "Kub 2P25 ln", "Kub 2P25 ln"}, x, y, a)
-  elseif templatetype == "" then
-    return makeSparseUnits(name, {type}, x, y, a)
+  if groupTemplates[templatetype] ~= nil then
+    return makeSparseUnits(name, groupTemplates[templatetype, x, y, a)
   else
     return makeSparseUnits(name, {type}, x, y, a)
   end
