@@ -200,36 +200,98 @@ function sendDeadUnits()
   end
 end
 
--- lazy initialize/position units
-function positionAndActivate(cntry_id, group_data, unit_data)
-  local uuid = getProperty("UUID", group_data.name)
-  local lat = getProperty("lat", group_data.name)
-  local lon = getProperty("lon", group_data.name)
-  local point = coord.LLtoLO(lat, lon)
-  local ngd = {
-    ["route"] = {},
+function makeGroup(templatetype, name, type, x, y, a)
+  --env.info("type:"..templatetype,true)
+  -- explode groups into predefined templates
+  if templatetype == "SA_6" then
+    return makeSparseUnits(name, {"Kub 1S91 str", "Kub 2P25 ln", "Kub 2P25 ln"}, x, y, a)
+  elseif templatetype == "" then
+    return makeSparseUnits(name, {type}, x, y, a)
+  else
+    return makeSparseUnits(name, {type}, x, y, a)
+  end
+end
+
+function makeSparseUnits(name, types, x, y, a)
+  local group = {
     ["tasks"] = {},
     ["visible"] = true,
     ["hidden"] = false,
     ["uncontrollable"] = false,
-    ["name"] = "G "..tostring(group_data.name),
+    ["name"] = "G "..tostring(name),
     ["start_time"] = 0,
     ["task"] = "Ground Nothing",
-    ["x"] = tonumber(point.x),
-    ["y"] = tonumber(point.z),
-    ["units"] = {
-      [1] = {
-        ["type"] = tostring(unit_data.type),
-        ["name"] = "U "..tostring(group_data.name),
-        ["heading"] = 0,
-        ["playerCanDrive"] = true,
-        ["skill"] = "Average",
-        ["x"] = tonumber(point.x),
-        ["y"] = tonumber(point.z),
-        ["transportable"] = {["randomTransportable"] = false}
+    ["x"] = tonumber(x),
+    ["y"] = tonumber(y),
+    ["units"] = {},
+    ["route"] = {
+      ["spans"] = {},
+      ["points"] = {
+        [1] = {
+          ["alt"] = 0,
+          ["type"] = "Turning Point",
+          ["ETA"] = 0,
+          ["alt_type"] = "BARO",
+          ["formation_template"] = "",
+          ["y"] = tonumber(x),
+          ["x"] = tonumber(y),
+          ["name"] = "G "..tostring(name),
+          ["ETA_locked"] = true,
+            ["speed"] = 0,
+            ["action"] = "Off Road",
+            ["task"] = {
+              ["id"] = "ComboTask",
+              ["params"] = {
+                ["tasks"] = {
+                  [1] = {
+                    ["enabled"] = true,
+                    ["auto"] = false,
+                    ["id"] = "WrappedAction",
+                    ["number"] = 1,
+                    ["params"] = {
+                      ["action"] = {
+                        ["id"] = "Option",
+                        ["params"] = {
+                          ["name"] = 9,
+                          ["value"] = 2,
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
-    }
   }
+  local lx = x
+  local ly = y
+  for i,v in ipairs(types) do
+    table.insert(group["units"], {
+      ["type"] = tostring(v),
+      ["name"] = "U "..tostring(name).. " "..v,
+      ["heading"] = a,
+      ["playerCanDrive"] = true,
+      ["skill"] = "Average",
+      ["x"] = tonumber(lx),
+      ["y"] = tonumber(ly),
+      ["transportable"] = {["randomTransportable"] = false}
+    })
+    lx = lx + 15
+    ly = ly + 15
+  end
+  return group
+end
+
+-- lazy initialize/position units
+function positionAndActivate(cntry_id, group_data, unit_data)
+  local uuid = getProperty("UUID", group_data.name)
+  local type = getProperty("grouptype", group_data.name)
+  local lat = getProperty("lat", group_data.name)
+  local lon = getProperty("lon", group_data.name)
+  local point = coord.LLtoLO(lat, lon)
+  local ngd = makeGroup(type, group_data.name, unit_data.type, point.x, point.z, 0)
   local group = coalition.addGroup(cntry_id, Group.Category.GROUND, ngd)
   spawnedGroups[uuid] = group
   originalUnitsPosition[uuid] = {
