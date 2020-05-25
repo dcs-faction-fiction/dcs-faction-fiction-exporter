@@ -251,7 +251,7 @@ function makeGroup(templatetype, name, type, x, y, a)
   --env.info("type:"..templatetype,true)
   -- explode groups into predefined templates
   if groupTemplates[templatetype] ~= nil then
-    return makeSparseUnits(name, groupTemplates[templatetype, x, y, a)
+    return makeSparseUnits(name, groupTemplates[templatetype], x, y, a)
   else
     return makeSparseUnits(name, {type}, x, y, a)
   end
@@ -312,19 +312,31 @@ function makeSparseUnits(name, types, x, y, a)
   }
   local lx = x
   local ly = y
+  local angle = -90
+  local distance = 0
   for i,v in ipairs(types) do
+    local noiseangle = (math.random()-0.5) * 50
+    local noisedist = (math.random()-0.5) * 40
+    local dx = math.cos(math.rad(angle+noiseangle)) * distance+noisedist
+    local dy = math.sin(math.rad(angle+noiseangle)) * distance+noisedist
     table.insert(group["units"], {
       ["type"] = tostring(v),
       ["name"] = "U "..tostring(name).. " "..v,
       ["heading"] = a,
       ["playerCanDrive"] = true,
       ["skill"] = "Average",
-      ["x"] = tonumber(lx),
-      ["y"] = tonumber(ly),
+      ["x"] = tonumber(lx+dx),
+      ["y"] = tonumber(ly+dy),
       ["transportable"] = {["randomTransportable"] = false}
     })
-    lx = lx + 15
-    ly = ly + 15
+    angle = angle + 90
+    if distance == 0 then
+      distance = 60
+    end
+    if angle == 360 then
+      angle = 0
+      distance = distance + 60
+    end
   end
   return group
 end
