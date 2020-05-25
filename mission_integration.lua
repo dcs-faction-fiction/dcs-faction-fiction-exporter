@@ -1,5 +1,9 @@
 do
 
+local DCS_SERVER_ADDRESS="95.216.78.27"
+local DCS_SERVER_PORT="19001"
+local DCS_SERVER_PASSWORD="JQN2nMWEj3nLBTnrrV1b"
+
 local logpref = "DCSFF /----------/ "
 env.info(logpref.."Included", false)
 
@@ -104,7 +108,7 @@ end
 
 function onMissionStart()
   env.info(logpref.."Initiating mission start triggers", false)
-  sendToDaemon("S", "")
+  sendToDaemon("S", "{\"address\": \""..DCS_SERVER_ADDRESS.."\", \"port\": "..DCS_SERVER_PORT..", \"password\": \""..DCS_SERVER_PASSWORD.."\"}")
   env.info(logpref.."Positioning units", false)
   for coa_name, coa_data in pairs(env.mission.coalition) do
     if (coa_name == 'red' or coa_name == 'blue') and type(coa_data) == 'table' then
