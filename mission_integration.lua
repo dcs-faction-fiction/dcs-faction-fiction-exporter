@@ -39,7 +39,7 @@ local fuelCapacity = {
   },
   ["Su-27"] = {
     ["type"] = "jet_fuel",
-    ["capacity"] = 5.590
+    ["capacity"] = 9.400
   },
   ["Su-33"] = {
     ["type"] = "jet_fuel",
@@ -68,6 +68,10 @@ local fuelCapacity = {
   ["JF-17"] = {
     ["type"] = "jet_fuel",
     ["capacity"] = 2.325
+  },
+  ["A-10C"] = {
+    ["type"] = "jet_fuel",
+    ["capacity"] = 5.029
   }
 }
 
@@ -143,7 +147,7 @@ function onMissionEnd()
   sendDeadUnits()
   sendMovedUnits()
   -- This is last becasue warehouse info terminates the mission with an event on server side
-  sendAirbaseDeltaAmmo()
+  sendAirbaseDelta()
 end
 
 -------------------------------------------------------------------------------
@@ -396,8 +400,8 @@ function buildAirbaseDeltaAmmo()
   return "{\"data\":["..s.."]}"
 end
 
-function sendAirbaseDeltaAmmo()
-  local s = buildAirbaseDeltaAmmo()
+function sendAirbaseDelta()
+  local s = buildAirbaseDelta()
   if s and s ~= "" then
     sendToDaemon("W", s)
   end
