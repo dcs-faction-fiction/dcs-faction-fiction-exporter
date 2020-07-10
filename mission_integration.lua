@@ -401,7 +401,7 @@ function buildAirbaseDeltaAmmo()
 end
 
 function sendAirbaseDelta()
-  local s = buildAirbaseDelta()
+  local s = buildAirbaseDeltaAmmo()
   if s and s ~= "" then
     sendToDaemon("W", s)
   end
