@@ -256,9 +256,250 @@ function makeGroup(templatetype, name, type, x, y, a)
   -- explode groups into predefined templates
   if groupTemplates[templatetype] ~= nil then
     return makeSparseUnits(name, groupTemplates[templatetype], x, y, a)
+  elseif templatetype == "AWACS" then
+    return makeAWACS(name, x, y)
+  elseif templatetype == "TANKER" then
+    return makeTANKER(name, x, y)
   else
     return makeSparseUnits(name, {type}, x, y, a)
   end
+end
+
+function makeAWACS(name, x, y)
+  return {
+    ["modulation"] = 0,
+    ["tasks"] = {},
+    ["task"] = "AWACS",
+    ["uncontrolled"] = false,
+    ["taskSelected"] = true,
+    ["route"] = {
+      ["points"] = {
+        [1] = {
+          ["alt"] = 9144,
+          ["action"] = "Turning Point",
+          ["alt_type"] = "BARO",
+          ["speed"] = 128.47222222222,
+          ["task"] = {
+              ["id"] = "ComboTask",
+              ["params"] = {
+                ["tasks"] = {
+                  [1] = {
+                    ["enabled"] = true,
+                    ["auto"] = true,
+                    ["id"] = "AWACS",
+                    ["number"] = 1,
+                    ["params"] = { },
+                  },
+                  [2] = {
+                    ["enabled"] = true,
+                    ["auto"] = true,
+                    ["id"] = "WrappedAction",
+                    ["number"] = 2,
+                    ["params"] = {
+                      ["action"] = {
+                        ["id"] = "EPLRS",
+                        ["params"] = {
+                          ["value"] = true,
+                        },
+                      },
+                    },
+                  },
+                  [3] = {
+                    ["enabled"] = true,
+                    ["auto"] = false,
+                    ["id"] = "Orbit",
+                    ["number"] = 3,
+                    ["params"] = {
+                      ["altitude"] = 9144,
+                      ["pattern"] = "Circle",
+                      ["speed"] = 128.47222222222,
+                      ["speedEdited"] = true,
+                    },
+                  },
+              },
+            },
+          },
+          ["type"] = "Turning Point",
+          ["ETA"] = 0,
+          ["ETA_locked"] = true,
+          ["y"] = y,
+          ["x"] = x,
+          ["name"] = "DictKey_WptName_8",
+          ["formation_template"] = "",
+          ["speed_locked"] = true,
+        },
+      }, -- end of ["points"]
+    }, -- end of ["route"]
+    ["hidden"] = false,
+    ["units"] = {
+      [1] = {
+        ["alt"] = 9144,
+        ["alt_type"] = "BARO",
+        ["livery_id"] = "nato",
+        ["skill"] = "Average",
+        ["speed"] = 128.47222222222,
+        ["type"] = "E-3A",
+        ["psi"] = 0,
+        ["y"] = y,
+        ["x"] = x,
+        ["name"] = "U "..tostring(name),
+        ["payload"] =  {
+          ["pylons"] = { },
+          ["fuel"] = "65000",
+          ["flare"] = 60,
+          ["chaff"] = 120,
+          ["gun"] = 100,
+        },
+        ["heading"] = 0,
+        ["callsign"] = {
+          [1] = 1,
+          [2] = 1,
+          [3] = 1,
+          ["name"] = "Overlord11",
+        },
+        ["onboard_num"] = "010",
+      },
+    },
+    ["y"] = y,
+    ["x"] = x,
+    ["name"] = "G "..tostring(name),
+    ["communication"] = true,
+    ["start_time"] = 0,
+    ["frequency"] = 251,
+  }
+end
+
+function makeTANKER(name, x, y)
+  return {
+      ["modulation"] = 0,
+      ["tasks"] = 
+      {
+      }, -- end of ["tasks"]
+      ["task"] = "Refueling",
+      ["uncontrolled"] = false,
+      ["taskSelected"] = true,
+      ["route"] = 
+      {
+          ["points"] = 
+          {
+              [1] = 
+              {
+                  ["alt"] = 4572,
+                  ["action"] = "Turning Point",
+                  ["alt_type"] = "BARO",
+                  ["speed"] = 128.47222222222,
+                  ["task"] = 
+                  {
+                      ["id"] = "ComboTask",
+                      ["params"] = 
+                      {
+                          ["tasks"] = 
+                          {
+                              [1] = 
+                              {
+                                  ["enabled"] = true,
+                                  ["auto"] = true,
+                                  ["id"] = "Tanker",
+                                  ["number"] = 1,
+                                  ["params"] = 
+                                  {
+                                  }, -- end of ["params"]
+                              }, -- end of [1]
+                              [2] = 
+                              {
+                                  ["enabled"] = true,
+                                  ["auto"] = true,
+                                  ["id"] = "WrappedAction",
+                                  ["number"] = 2,
+                                  ["params"] = 
+                                  {
+                                      ["action"] = 
+                                      {
+                                          ["id"] = "ActivateBeacon",
+                                          ["params"] = 
+                                          {
+                                              ["type"] = 4,
+                                              ["frequency"] = 1088000000,
+                                              ["callsign"] = "TKR",
+                                              ["channel"] = 1,
+                                              ["modeChannel"] = "X",
+                                              ["bearing"] = true,
+                                              ["system"] = 4,
+                                          }, -- end of ["params"]
+                                      }, -- end of ["action"]
+                                  }, -- end of ["params"]
+                              }, -- end of [2]
+                              [3] = 
+                              {
+                                  ["enabled"] = true,
+                                  ["auto"] = false,
+                                  ["id"] = "Orbit",
+                                  ["number"] = 3,
+                                  ["params"] = 
+                                  {
+                                      ["altitude"] = 4572,
+                                      ["pattern"] = "Circle",
+                                      ["speed"] = 128.47222222222,
+                                      ["speedEdited"] = true,
+                                  }, -- end of ["params"]
+                              }, -- end of [3]
+                          }, -- end of ["tasks"]
+                      }, -- end of ["params"]
+                  }, -- end of ["task"]
+                  ["type"] = "Turning Point",
+                  ["ETA"] = 0,
+                  ["ETA_locked"] = true,
+                  ["y"] = x,
+                  ["x"] = y,
+                  ["name"] = "G",
+                  ["formation_template"] = "",
+                  ["speed_locked"] = true,
+              }, -- end of [1]
+          }, -- end of ["points"]
+      }, -- end of ["route"]
+      ["hidden"] = false,
+      ["units"] = 
+      {
+          [1] = 
+          {
+              ["alt"] = 4572,
+              ["alt_type"] = "BARO",
+              ["livery_id"] = "100th ARW",
+              ["skill"] = "Average",
+              ["speed"] = 128.47222222222,
+              ["type"] = "KC135MPRS",
+              ["psi"] = 0,
+              ["y"] = y,
+              ["x"] = x,
+              ["name"] = "U "..tostring(name),
+              ["payload"] = 
+              {
+                  ["pylons"] = 
+                  {
+                  }, -- end of ["pylons"]
+                  ["fuel"] = 90700,
+                  ["flare"] = 60,
+                  ["chaff"] = 120,
+                  ["gun"] = 100,
+              }, -- end of ["payload"]
+              ["heading"] = 0,
+              ["callsign"] = 
+              {
+                  [1] = 1,
+                  [2] = 1,
+                  [3] = 1,
+                  ["name"] = "Texaco11",
+              }, -- end of ["callsign"]
+              ["onboard_num"] = "010",
+          }, -- end of [1]
+      }, -- end of ["units"]
+      ["y"] = y,
+      ["x"] = x,
+      ["name"] = "G "..tostring(name),
+      ["communication"] = true,
+      ["start_time"] = 0,
+      ["frequency"] = 251,
+  }
 end
 
 function makeSparseUnits(name, types, x, y, a)
@@ -353,7 +594,11 @@ function positionAndActivate(cntry_id, group_data, unit_data)
   local lon = getProperty("lon", group_data.name)
   local point = coord.LLtoLO(lat, lon)
   local ngd = makeGroup(type, group_data.name, unit_data.type, point.x, point.z, 0)
-  local group = coalition.addGroup(cntry_id, Group.Category.GROUND, ngd)
+  if type == "AWACS" or type == "TANKER" then
+    local group = coalition.addGroup(cntry_id, Group.Category.AIRPLANE, ngd)
+  else
+    local group = coalition.addGroup(cntry_id, Group.Category.GROUND, ngd)
+  end
   spawnedGroups[uuid] = group
   originalUnitsPosition[uuid] = {
     ["x"] = point.x,
