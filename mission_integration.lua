@@ -278,7 +278,7 @@ function makeAWACS(name, x, y)
           ["alt"] = 9144,
           ["action"] = "Turning Point",
           ["alt_type"] = "BARO",
-          ["speed"] = 128.47222222222,
+          ["speed"] = 150,
           ["task"] = {
               ["id"] = "ComboTask",
               ["params"] = {
@@ -337,7 +337,7 @@ function makeAWACS(name, x, y)
         ["alt_type"] = "BARO",
         ["livery_id"] = "nato",
         ["skill"] = "Average",
-        ["speed"] = 128.47222222222,
+        ["speed"] = 150,
         ["type"] = "E-3A",
         ["psi"] = 0,
         ["y"] = y,
@@ -387,7 +387,7 @@ function makeTANKER(name, x, y)
                   ["alt"] = 4572,
                   ["action"] = "Turning Point",
                   ["alt_type"] = "BARO",
-                  ["speed"] = 128.47222222222,
+                  ["speed"] = 150,
                   ["task"] = 
                   {
                       ["id"] = "ComboTask",
@@ -466,7 +466,7 @@ function makeTANKER(name, x, y)
               ["alt_type"] = "BARO",
               ["livery_id"] = "100th ARW",
               ["skill"] = "Average",
-              ["speed"] = 128.47222222222,
+              ["speed"] = 150,
               ["type"] = "KC135MPRS",
               ["psi"] = 0,
               ["y"] = y,
