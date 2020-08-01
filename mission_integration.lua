@@ -164,18 +164,23 @@ local spawnedGroups = {}
 function calculateMovedUnits()
   env.info(logpref.."Calculating moved units", false)
   for k,v in pairs(spawnedGroups) do
-    local u = v:getUnit(1)
-    local p = u:getPosition()
-    local ox = math.modf(originalUnitsPosition[k].x)
-    local oy = math.modf(originalUnitsPosition[k].y)
-    local nx = math.modf(p.p.x)
-    local ny = math.modf(p.p.z)
-    if ox ~= nx or oy ~= ny then
-      env.info(logpref.."Calculating moved units:"..u:getName().." ox="..ox.." ox="..ox.." nx="..nx.." ny="..ny, false)
-      local lat, lon = coord.LOtoLL({x = nx, y = 0, z = ny})
-      movedUnits[k] = {}
-      movedUnits[k].lat = lat
-      movedUnits[k].lon = lon
+    if v ~= nil then
+      local u = v:getUnit(1)
+      if u ~= nil then
+        local p = u:getPosition()
+        env.info(logpref.."Calculating unit "..k, false)
+        local ox = math.modf(originalUnitsPosition[k].x)
+        local oy = math.modf(originalUnitsPosition[k].y)
+        local nx = math.modf(p.p.x)
+        local ny = math.modf(p.p.z)
+        if ox ~= nx or oy ~= ny then
+          env.info(logpref.."Calculating moved units:"..u:getName().." ox="..ox.." ox="..ox.." nx="..nx.." ny="..ny, false)
+          local lat, lon = coord.LOtoLL({x = nx, y = 0, z = ny})
+          movedUnits[k] = {}
+          movedUnits[k].lat = lat
+          movedUnits[k].lon = lon
+        end
+      end
     end
   end
 end
@@ -594,17 +599,21 @@ function positionAndActivate(cntry_id, group_data, unit_data)
   local lon = getProperty("lon", group_data.name)
   local point = coord.LLtoLO(lat, lon)
   local ngd = makeGroup(type, group_data.name, unit_data.type, point.x, point.z, 0)
+  local category = Group.Category.GROUND
   if type == "AWACS" or type == "TANKER" then
-    local group = coalition.addGroup(cntry_id, Group.Category.AIRPLANE, ngd)
+    coalition.addGroup(cntry_id, Group.Category.AIRPLANE, ngd)
+    env.info(logpref.."LAZY INIT OF PLANE: "..group_data.name, false)
   else
     local group = coalition.addGroup(cntry_id, Group.Category.GROUND, ngd)
+    if group ~= nil then
+      spawnedGroups[uuid] = group
+      originalUnitsPosition[uuid] = {
+        ["x"] = point.x,
+        ["y"] = point.z
+      }
+      env.info(logpref.."LAZY INIT OF: "..group_data.name, false)
+    end
   end
-  spawnedGroups[uuid] = group
-  originalUnitsPosition[uuid] = {
-    ["x"] = point.x,
-    ["y"] = point.z
-  }
-  env.info(logpref.."LAZY INIT OF: "..group_data.name, false)
 end
 
 
