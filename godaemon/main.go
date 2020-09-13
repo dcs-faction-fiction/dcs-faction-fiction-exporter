@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -101,11 +102,18 @@ func startNewMission() {
 	}
 }
 
+func kill(cmd *exec.Cmd) error {
+	kill := exec.Command("TASKKILL", "/T", "/F", "/PID", strconv.Itoa(cmd.Process.Pid))
+	kill.Stderr = os.Stderr
+	kill.Stdout = os.Stdout
+	return kill.Run()
+}
+
 func stopMission() {
 	log.Println("Stop mission received...")
 	if command != nil {
 		log.Println("Stopping server...")
-		command.Process.Kill()
+		kill(command)
 		command = nil
 	}
 }

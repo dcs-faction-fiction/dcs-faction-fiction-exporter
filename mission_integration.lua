@@ -606,11 +606,14 @@ function positionAndActivate(cntry_id, group_data, unit_data)
   else
     local group = coalition.addGroup(cntry_id, Group.Category.GROUND, ngd)
     if group ~= nil then
-      spawnedGroups[uuid] = group
-      originalUnitsPosition[uuid] = {
-        ["x"] = point.x,
-        ["y"] = point.z
-      }
+      if groupTemplates[type] == nil then
+        -- Only manage moving units if they are not a group but only a single unit.
+        spawnedGroups[uuid] = group
+        originalUnitsPosition[uuid] = {
+          ["x"] = point.x,
+          ["y"] = point.z
+        }
+      end
       env.info(logpref.."LAZY INIT OF: "..group_data.name, false)
     end
   end
