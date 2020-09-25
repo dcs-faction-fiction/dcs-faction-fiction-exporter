@@ -702,7 +702,7 @@ function Event_Handler:onEvent(event)
     onMissionEnd()
   elseif event.id == world.event.S_EVENT_DEAD then
     local group = Unit.getGroup(event.initiator)
-    local uuid = getProperty("UUID", group_data.name)
+    local uuid = getProperty("UUID", group.name)
     if uuid and uuid ~= "" then
       env.info(logpref.."DESTROYED: "..uuid)
       table.insert(deadUnits, uuid)
