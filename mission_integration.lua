@@ -49,6 +49,10 @@ local fuelCapacity = {
     ["type"] = "jet_fuel",
     ["capacity"] = 3.493
   },
+  ["Su-25T"] = {
+    ["type"] = "jet_fuel",
+    ["capacity"] = 3.790
+  },
   ["UH-1H"] = {
     ["type"] = "gasoline",
     ["capacity"] = 0.631
@@ -56,6 +60,14 @@ local fuelCapacity = {
   ["Ka-50"] = {
     ["type"] = "gasoline",
     ["capacity"] = 1.450
+  },
+  ["Mi-8MT"] = {
+    ["type"] = "gasoline",
+    ["capacity"] = 1.929
+  },
+  ["SA342M"] = {
+    ["type"] = "gasoline",
+    ["capacity"] = 0.416
   },
   ["AV8BNA"] = {
     ["type"] = "jet_fuel",
@@ -70,6 +82,10 @@ local fuelCapacity = {
     ["capacity"] = 2.325
   },
   ["A-10C"] = {
+    ["type"] = "jet_fuel",
+    ["capacity"] = 5.029
+  },
+  ["A-10C_2"] = {
     ["type"] = "jet_fuel",
     ["capacity"] = 5.029
   }
