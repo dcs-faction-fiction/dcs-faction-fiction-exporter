@@ -176,6 +176,7 @@ local deadUnits = {}
 local originalUnitsPosition = {}
 local movedUnits = {}
 local spawnedGroups = {}
+local unitsCount = {}
 
 function calculateMovedUnits()
   env.info(logpref.."Calculating moved units", false)
@@ -580,6 +581,7 @@ function makeSparseUnits(name, types, x, y, a)
   local ly = y
   local angle = -90
   local distance = 0
+  local ct = 0
   for i,v in ipairs(types) do
     local noiseangle = (math.random()-0.5) * 50
     local noisedist = (math.random()-0.5) * 40
@@ -603,7 +605,9 @@ function makeSparseUnits(name, types, x, y, a)
       angle = 0
       distance = distance + 60
     end
+    ct = ct + 1
   end
+  unitsCount.insert(getProperty("UUID", name), ct)
   return group
 end
 
@@ -720,8 +724,16 @@ function Event_Handler:onEvent(event)
     local group = Unit.getGroup(event.initiator)
     local uuid = getProperty("UUID", group.name)
     if uuid and uuid ~= "" then
-      env.info(logpref.."DESTROYED: "..uuid)
-      table.insert(deadUnits, uuid)
+      if unitsCount[uuid] ~= nil then
+        unitsCount[uuid] = unitsCount[uuid] - 1
+        if (unitsCount[uuid] <= 0) then
+          env.info(logpref.."DESTROYED: "..uuid)
+          table.insert(deadUnits, uuid)
+        end
+      else
+        env.info(logpref.."DESTROYED: "..uuid)
+        table.insert(deadUnits, uuid)
+      end
     end
   elseif event.id == world.event.S_EVENT_TAKEOFF or event.id == world.event.S_EVENT_LAND then
     local unit = event.initiator
