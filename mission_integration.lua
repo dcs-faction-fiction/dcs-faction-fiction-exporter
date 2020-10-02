@@ -237,11 +237,13 @@ local groupTemplates = {
   ["SA_6"] = {
     "Kub 1S91 str",
     "Kub 2P25 ln",
+    "Kub 2P25 ln",
     "Kub 2P25 ln"
   },
   ["SA_11"] = {
     "SA-11 Buk CC 9S470M1",
     "SA-11 Buk SR 9S18M1",
+    "5p73 s-125 ln",
     "5p73 s-125 ln",
     "5p73 s-125 ln"
   },
@@ -250,6 +252,7 @@ local groupTemplates = {
     "Hawk sr",
     "Hawk cwar",
     "Hawk tr",
+    "Hawk ln",
     "Hawk ln",
     "Hawk ln"
   },
