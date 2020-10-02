@@ -217,6 +217,7 @@ function sendMovedUnits()
   if s and s ~= "" then
     s = s.."]"
     sendToDaemon("M", s)
+    movedUnits = {}
   end
 end
 
@@ -230,6 +231,7 @@ function sendDeadUnits()
   if s and s ~= "" then
     s = s.."]"
     sendToDaemon("D", s)
+    deadUnits = {}
   end
 end
 
@@ -688,6 +690,8 @@ function sendAirbaseDelta()
   local s = buildAirbaseDeltaAmmo()
   if s and s ~= "" then
     sendToDaemon("W", s)
+    airbaseDeltaAmmo = {}
+    airbaseDeltaFuel = {}
   end
 end
 
@@ -746,11 +750,17 @@ function Event_Handler:onEvent(event)
     end
   elseif event.id == world.event.S_EVENT_TAKEOFF or event.id == world.event.S_EVENT_LAND then
     local unit = event.initiator
+    local name = unit:getName()
     if unit and event.place then
       local airbaseName = event.place:getName()
       local unitFuel = unit:getFuel()
       local unitAmmo = unit:getAmmo()
       local typeName = unit:getDesc().typeName
+      if event.id == world.event.S_EVENT_TAKEOFF then
+        env.info(logpref.."UNIT TAKEOFF: "..name)
+      elseif event.id == world.event.S_EVENT_LAND then
+        env.info(logpref.."UNIT LAND: "..name)
+      end
       if typeName then
         -- This is the plane itself
         if event.id == world.event.S_EVENT_TAKEOFF then
