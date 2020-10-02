@@ -116,6 +116,9 @@ function sendToDaemon(cmd, s)
 end
 
 function getProperty(property, name)
+  if name == nil then
+    return nil
+  end
   _, _, result = string.find(name, "%["..property..":([^\]]+)%]")
   return result
 end
@@ -607,7 +610,8 @@ function makeSparseUnits(name, types, x, y, a)
     end
     ct = ct + 1
   end
-  unitsCount.insert(getProperty("UUID", name), ct)
+  local uuid = getProperty("UUID", name)
+  unitsCount[uuid] = ct
   return group
 end
 
@@ -721,17 +725,19 @@ function Event_Handler:onEvent(event)
   elseif event.id == world.event.S_EVENT_MISSION_END then
     onMissionEnd()
   elseif event.id == world.event.S_EVENT_DEAD then
-    local group = Unit.getGroup(event.initiator)
-    local uuid = getProperty("UUID", group.name)
+    local name = event.initiator:getName()
+    env.info(logpref.."UNIT DEAD: "..name, false)
+    local uuid = getProperty("UUID", name)
     if uuid and uuid ~= "" then
       if unitsCount[uuid] ~= nil then
+        env.info(logpref.."DECREASING COUNT FOR UNIT: "..uuid)
         unitsCount[uuid] = unitsCount[uuid] - 1
         if (unitsCount[uuid] <= 0) then
-          env.info(logpref.."DESTROYED: "..uuid)
+          env.info(logpref.."DECREASING TO 0 DESTROYED COUNT FOR UNIT: "..uuid)
           table.insert(deadUnits, uuid)
         end
       else
-        env.info(logpref.."DESTROYED: "..uuid)
+        env.info(logpref.."SINGLE UNIT GROUP DESTROYED: "..uuid)
         table.insert(deadUnits, uuid)
       end
     end
