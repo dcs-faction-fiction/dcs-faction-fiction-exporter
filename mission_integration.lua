@@ -54,19 +54,19 @@ local fuelCapacity = {
     ["capacity"] = 3.790
   },
   ["UH-1H"] = {
-    ["type"] = "gasoline",
+    ["type"] = "jet_fuel",
     ["capacity"] = 0.631
   },
   ["Ka-50"] = {
-    ["type"] = "gasoline",
+    ["type"] = "jet_fuel",
     ["capacity"] = 1.450
   },
   ["Mi-8MT"] = {
-    ["type"] = "gasoline",
+    ["type"] = "jet_fuel",
     ["capacity"] = 1.929
   },
   ["SA342M"] = {
-    ["type"] = "gasoline",
+    ["type"] = "jet_fuel",
     ["capacity"] = 0.416
   },
   ["AV8BNA"] = {
