@@ -537,6 +537,7 @@ function makeSparseUnits(name, types, x, y, a)
     ["tasks"] = {},
     ["visible"] = true,
     ["hidden"] = false,
+    ["hiddenOnMFD"] = true,
     ["uncontrollable"] = false,
     ["name"] = "G "..tostring(name),
     ["start_time"] = 0,
