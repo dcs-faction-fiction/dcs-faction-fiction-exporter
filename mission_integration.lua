@@ -167,6 +167,8 @@ function onMissionEnd()
   sendMovedUnits()
   -- This is last becasue warehouse info terminates the mission with an event on server side
   sendAirbaseDelta()
+  -- This closes the mission file on the server side so that further updates won't be accepted if mission restarts
+  sendToDaemon("E", "{}")
 end
 
 -------------------------------------------------------------------------------

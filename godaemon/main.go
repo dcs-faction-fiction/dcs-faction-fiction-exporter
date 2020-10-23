@@ -35,6 +35,7 @@ var DCSFF_POST_DEADUNITS = DCSFF_API + "/v2/daemon-api/servers/" + DCSFF_SERVER_
 var DCSFF_POST_MOVEDUNITS = DCSFF_API + "/v2/daemon-api/servers/" + DCSFF_SERVER_ID + "/units-moved"
 var DCSFF_NEXT_MISSION = DCSFF_API + "/v2/daemon-api/servers/" + DCSFF_SERVER_ID + "/download-mission"
 var DCSFF_MISSION_STARTED = DCSFF_API + "/v2/daemon-api/servers/" + DCSFF_SERVER_ID + "/actions/MISSION_STARTED"
+var DCSFF_MISSION_ENDED = DCSFF_API + "/v2/daemon-api/servers/" + DCSFF_SERVER_ID + "/actions/STOP_MISSION"
 
 var firstPoll = true
 
@@ -206,6 +207,9 @@ func handleConnection(conn net.Conn) {
 			case "M":
 				log.Println("Sending moved units: " + json)
 				sendPost(DCSFF_POST_MOVEDUNITS, json)
+			case "E":
+				log.Println("Mission ended.")
+				sendPost(DCSFF_MISSION_ENDED, json)
 			}
 			return
 		} else {
