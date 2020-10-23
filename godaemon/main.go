@@ -210,6 +210,7 @@ func handleConnection(conn net.Conn) {
 			case "E":
 				log.Println("Mission ended.")
 				sendPost(DCSFF_MISSION_ENDED, json)
+				stopMission()
 			}
 			return
 		} else {

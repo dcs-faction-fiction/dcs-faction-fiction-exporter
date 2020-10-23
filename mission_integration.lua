@@ -14,6 +14,10 @@ local host = "localhost"
 local port = 5555
 env.info(logpref.."Adding sockets OK", false)
 
+function sleep(sec)
+  socket.sleep(sec)
+end
+
 -- fuel capacity for each vehicle in tons (not kg!)
 -- fuel types
 --   jet_fuel
@@ -169,6 +173,7 @@ function onMissionEnd()
   sendAirbaseDelta()
   -- This closes the mission file on the server side so that further updates won't be accepted if mission restarts
   sendToDaemon("E", "{}")
+  sleep(60)
 end
 
 -------------------------------------------------------------------------------
